@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <!-- import CSS -->
+    <title>JWFS</title>
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+</head>
+
+<body>
+    <div id="app">
+        <el-row v-loading="loading">
+            <el-form label-width="80px">
+                <el-form-item label="匹配值">
+                    <el-input type="textarea" rows="20" v-model="inputVal" placeholder="输入匹配的值，换行输入"></el-input>
+                </el-form-item>
+                <el-form-item label="目标值">
+                    <el-input v-model="sumVal" placeholder="输入目标值"></el-input>
+                </el-form-item>
+                <el-form-item label="指定数量">
+                    <el-input v-model="targetCount" placeholder="输入执行数量，就是指定几个数字加起来等于目标值，不填的话就是所有组合"></el-input>
+                </el-form-item>
+                <el-form-item>
+                    <el-button @click="calc" type="primary">计算</el-button>
+                </el-form-item>
+            </el-form>
+        </el-row>
+        <el-dialog :visible.sync="visible" title="组合结果" @open="loading = false">
+            <el-table :data="resultArr" style="width: 100%" max-height="400px">
+                <el-table-column type="index" width="80">
+                </el-table-column>
+                <el-table-column label="结果" header-align="center">
+                    <template slot-scope="scope">
+                        <el-tag style="margin-left: 5px;margin-bottom: 5px" v-for="(item, i) in scope.row.result"
+                            :key="i">{{ item }}</el-tag>
+                    </template>>
+                </el-table-column>
+            </el-table>
+        </el-dialog>
+
+    </div>
+</body>
+<!-- import Vue before Element -->
+<script src="https://unpkg.com/vue@2/dist/vue.js"></script>
+<!-- import JavaScript -->
+<script src="https://unpkg.com/element-ui/lib/index.js"></script>
+<script>
+    function findNumberCombination(numbers, target, count) {
+        const dp = new Array(target + 1).fill(false);
+        dp[0] = true;
+
+        for (let i = 0; i < numbers.length; i++) {
+            const num = numbers[i];
+            for (let j = target; j >= num; j--) {
+                dp[j] = dp[j] || dp[j - num];
+            }
+        }
+
+        if (!dp[target]) {
+            return null;
+        }
+
+        const combination = [];
+        let sum = target;
+
+        for (let i = numbers.length - 1; i >= 0; i--) {
+            const num = numbers[i];
+            if (sum >= num && dp[sum - num]) {
+                combination.unshift(num);
+                sum -= num;
+            }
+
+            if (count && combination.length === count) {
+                break;
+            }
+        }
+
+        return count && combination.length !== count ? null : combination;
+    }
+
+
+    new Vue({
+        el: '#app',
+
+        data: function () {
+            return {
+                visible: false,
+                resultArr: [],
+                inputVal: '',
+                sumVal: '',
+                tolerance: '',
+                targetCount: '',
+                loading: false
+            }
+        },
+        methods: {
+            calc() {
+                const str = this.inputVal.trim();
+                const target = this.sumVal.trim();
+                if (!str) {
+                    ELEMENT.Message.warning('请输入匹配值');
+                    return
+                }
+                if (!target) {
+                    ELEMENT.Message.warning('请输入目标值');
+                    return
+                }
+                const arr = str.split('\n').map(row => +row);
+                let result = findNumberCombination(arr, +target, +this.targetCount);
+                this.resultArr = [{ result: result }]
+                this.visible = true
+            }
+        }
+    })
+</script>
+
+</html>
