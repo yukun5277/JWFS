@@ -18,9 +18,6 @@
                 <el-form-item label="目标值">
                     <el-input v-model="sumVal" placeholder="输入目标值"></el-input>
                 </el-form-item>
-                <el-form-item label="指定数量">
-                    <el-input v-model="targetCount" placeholder="输入执行数量，就是指定几个数字加起来等于目标值，不填的话就是所有组合"></el-input>
-                </el-form-item>
                 <el-form-item>
                     <el-button @click="calc" type="primary">计算</el-button>
                 </el-form-item>
@@ -46,38 +43,21 @@
 <!-- import JavaScript -->
 <script src="https://unpkg.com/element-ui/lib/index.js"></script>
 <script>
-    function findNumberCombination(numbers, target, count) {
-        const dp = new Array(target + 1).fill(false);
-        dp[0] = true;
+function findNumberCombination(numbers, target) {
+  const dp = new Array(target + 1).fill(null);
+  dp[0] = [];
 
-        for (let i = 0; i < numbers.length; i++) {
-            const num = numbers[i];
-            for (let j = target; j >= num; j--) {
-                dp[j] = dp[j] || dp[j - num];
-            }
-        }
-
-        if (!dp[target]) {
-            return null;
-        }
-
-        const combination = [];
-        let sum = target;
-
-        for (let i = numbers.length - 1; i >= 0; i--) {
-            const num = numbers[i];
-            if (sum >= num && dp[sum - num]) {
-                combination.unshift(num);
-                sum -= num;
-            }
-
-            if (count && combination.length === count) {
-                break;
-            }
-        }
-
-        return count && combination.length !== count ? null : combination;
+  for (const num of numbers) {
+    for (let i = target; i >= num; i--) {
+      if (dp[i - num] !== null) {
+        const combination = [...dp[i - num], num];
+        dp[i] = combination;
+      }
     }
+  }
+
+  return dp[target] || null;
+}
 
 
     new Vue({
@@ -90,7 +70,6 @@
                 inputVal: '',
                 sumVal: '',
                 tolerance: '',
-                targetCount: '',
                 loading: false
             }
         },
@@ -107,8 +86,9 @@
                     return
                 }
                 const arr = str.split('\n').map(row => +row);
-                let result = findNumberCombination(arr, +target, +this.targetCount);
-                this.resultArr = [{ result: result }]
+                let result = findNumberCombination(arr, +target);
+                this.resultArr = [{ result: result }];
+                console.log(result.reduce((pre,cur) => {return pre + cur}, 0))
                 this.visible = true
             }
         }
